@@ -3,6 +3,8 @@
   :url "https://github.com/cyverse-de/permissions-client"
   :license {:name "BSD"
             :url "http://iplantcollaborative.org/sites/default/files/iPLANT-LICENSE.txt"}
+  :deploy-repositories [["releases" :clojars]
+                        ["snapshots" :clojars]]
   :dependencies [[cheshire "5.6.1"]
                  [clj-http "2.0.0"]
                  [com.cemerick/url "0.1.1"]
