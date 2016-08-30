@@ -1,6 +1,6 @@
-(defproject org.iplantc/permissions-client "5.2.8.0"
+(defproject org.cyverse/permissions-client "2.8.0"
   :description "A Clojure client library for the CyVerse permissions service."
-  :url "https://github.com/cyverse/DE"
+  :url "https://github.com/cyverse-de/permissions-client"
   :license {:name "BSD"
             :url "http://iplantcollaborative.org/sites/default/files/iPLANT-LICENSE.txt"}
   :dependencies [[cheshire "5.6.1"]
