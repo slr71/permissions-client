@@ -5,6 +5,7 @@
             :url "http://iplantcollaborative.org/sites/default/files/iPLANT-LICENSE.txt"}
   :deploy-repositories [["releases" :clojars]
                         ["snapshots" :clojars]]
+  :plugins [[test2junit "1.2.2"]]
   :dependencies [[cheshire "5.6.1"]
                  [clj-http "2.0.0"]
                  [com.cemerick/url "0.1.1"]
