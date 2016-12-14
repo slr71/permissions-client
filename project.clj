@@ -6,9 +6,9 @@
   :deploy-repositories [["releases" :clojars]
                         ["snapshots" :clojars]]
   :plugins [[test2junit "1.2.2"]]
-  :dependencies [[cheshire "5.6.1"]
-                 [clj-http "2.0.0"]
+  :dependencies [[cheshire "5.6.3"]
+                 [clj-http "3.4.1"]
                  [com.cemerick/url "0.1.1"]
-                 [medley "0.8.2"]
+                 [medley "0.8.4"]
                  [org.clojure/clojure "1.8.0"]]
   :profiles {:test {:dependencies [[clj-http-fake "1.0.2"]]}})
