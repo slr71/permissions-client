@@ -298,6 +298,25 @@
   (with-fake-routes {(fake-url "permissions") {:get list-perms-response}}
     (is (= (pc/list-permissions (create-fake-client)) fake-perms))))
 
+(defn copy-perms-handler [expected-source-type expected-source-id expected-subjects]
+  (fn [{:keys [uri body]}]
+    (if-let [match (re-find #"^/permissions/subjects/([^/]+)/([^/]+)/copy" uri)]
+      (let [[_ actual-source-type actual-source-id] match
+            actual-subjects (:subjects (json/decode (slurp body) true))]
+        (is (= expected-source-type actual-source-type))
+        (is (= expected-source-id actual-source-id))
+        (is (= expected-subjects actual-subjects))
+        {:status 200 :body ""})
+      {:status 400 :body ""})))
+
+(deftest test-copy-perms
+  (let [source-type "user"
+        source-id   "ipcdev"
+        subjects    [{:subject_type "user" :subject_id "ipctest"}]]
+    (with-fake-routes {(fake-url "permissions" "subjects" source-type source-id "copy")
+                       {:post (copy-perms-handler source-type source-id subjects)}}
+      (is (nil? (pc/copy-permissions (create-fake-client) source-type source-id subjects))))))
+
 (defn fake-perm [resource-type resource-name subject-type subject-id level]
   {:id               "e3c73dd4-501f-40b2-9bf4-631b1ca93a89"
    :permission_level level
