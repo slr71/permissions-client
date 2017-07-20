@@ -66,6 +66,12 @@
   (list-permissions [_]
     "Lists all permissions known to the permissions service.")
 
+  (copy-permissions [_ source-type source-id subjects]
+    "Copies permissions from one subject to one or more other subjects. Only permissions that are assigned
+     directly to the source subject are copied. The source-type parameter contains the type of the source
+     subject. The source-id parameter contains the subject ID from Grouper. The subjects parameter contains
+     a list of destination subjects, with each subject containing :subject_type and :subject_id keys.")
+
   (grant-permission [_ resource-type resource-name subject-type subject-id level]
     "Grants permission to access a resource to a user. The resource-type, resource-name, subject-type, and
      subject-id fields have the same meanings as in the resources and subjects methods. Neither the resource
@@ -214,6 +220,12 @@
 
   (list-permissions [_]
     (:body (http/get (build-url base-url "permissions") {:as :json})))
+
+  (copy-permissions [_ source-type source-id subjects]
+    (http/post (build-url base-url "permissions" "subjects" source-type source-id "copy")
+               {:form-params  {:subjects subjects}
+                :content-type :json})
+    nil)
 
   (grant-permission [_ resource-type resource-name subject-type subject-id level]
     (:body (http/put (build-url base-url "permissions" "resources" resource-type resource-name "subjects"

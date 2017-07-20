@@ -24,7 +24,8 @@
 
 (defn with-default-resource-types [f]
   (ensure-resource-type-defined "app" "A Discovery Environment application.")
-  (ensure-resource-type-defined "analysis" "The results of running a Discovery Environment application."))
+  (ensure-resource-type-defined "analysis" "The results of running a Discovery Environment application.")
+  (f))
 
 (defn add-test-subjects []
   (let [client (create-permissions-client)]
@@ -296,6 +297,20 @@
     (is (looked-up-permission-correct? perms "analysis" "C" "user" "ipcdev" "own"))
     (is (looked-up-permission-correct? perms "analysis" "D" "user" "ipctest" "own"))
     (is (looked-up-permission-correct? perms "analysis" "C" "group" "ipcusers" "read"))))
+
+(deftest test-copy-permissions
+  (let [client (create-permissions-client)
+        _      (pc/copy-permissions client "user" "ipcdev" [{:subject_type "user" :subject_id "ipctest"}])
+        perms  (get-permission-map)]
+    (is (looked-up-permission-correct? perms "app" "a" "user" "ipcdev" "own"))
+    (is (looked-up-permission-correct? perms "app" "b" "user" "ipctest" "write"))
+    (is (looked-up-permission-correct? perms "app" "a" "group" "ipcusers" "read"))
+    (is (looked-up-permission-correct? perms "app" "b" "group" "ipcusers" "admin"))
+    (is (looked-up-permission-correct? perms "analysis" "C" "user" "ipcdev" "own"))
+    (is (looked-up-permission-correct? perms "analysis" "D" "user" "ipctest" "own"))
+    (is (looked-up-permission-correct? perms "analysis" "C" "group" "ipcusers" "read"))
+    (is (looked-up-permission-correct? perms "app" "a" "user" "ipctest" "own"))
+    (is (looked-up-permission-correct? perms "analysis" "C" "user" "ipctest" "own"))))
 
 (deftest test-grant-perm
   (let [client (create-permissions-client)
