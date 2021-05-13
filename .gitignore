@@ -5,9 +5,11 @@ pom.xml
 pom.xml.asc
 *.jar
 *.class
+.eastwood
 /.lein-*
 /.nrepl-port
 .hgignore
 .hg/
 build.xml
 test2junit
+/repl

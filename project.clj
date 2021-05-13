@@ -5,10 +5,13 @@
             :url "http://iplantcollaborative.org/sites/default/files/iPLANT-LICENSE.txt"}
   :deploy-repositories [["releases" :clojars]
                         ["snapshots" :clojars]]
-  :plugins [[test2junit "1.2.2"]]
-  :dependencies [[cheshire "5.6.3"]
-                 [clj-http "3.4.1"]
+  :plugins [[jonase/eastwood "0.4.2"]
+            [lein-ancient "0.7.0"]
+            [test2junit "1.2.2"]]
+  :dependencies [[cheshire "5.10.0"]
+                 [clj-http "3.12.1"]
                  [com.cemerick/url "0.1.1" :exclusions [com.cemerick/clojurescript.test]]
-                 [medley "0.8.4"]
-                 [org.clojure/clojure "1.8.0"]]
-  :profiles {:test {:dependencies [[clj-http-fake "1.0.3"]]}})
+                 [medley "1.3.0"]
+                 [org.clojure/clojure "1.10.3"]]
+  :profiles {:dev {:dependencies [[clj-http-fake "1.0.3"]]}
+             :repl {:source-paths ["repl"]}})
