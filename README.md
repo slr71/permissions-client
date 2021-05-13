@@ -50,6 +50,8 @@ A client library for the CyVerse Discovery Environment permissions service.
 ;; Lookup the highest permission levels available to a subject for a resource type. If the subject is a user then the
 ;; listing may also include permissions that are assigned to groups that the user belongs to.
 (def permissions (pc/get-subject-permissions-for-resource-type client subject-type subject-id resource-type true)
+(def permissions (pc/get-abbreviated-subject-permissions-for-resource-type client subject-type subject-id resource-type
+                                                                           true)
 
 ;; List permissions by subject and resource.
 (def permissions (pc/get-subject-permissions-for-resource client subject-type subject-id resource-type resource-name
