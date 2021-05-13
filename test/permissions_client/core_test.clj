@@ -2,9 +2,9 @@
   (:require [permissions-client.core :as pc]
             [cemerick.url :as curl]
             [cheshire.core :as json]
+            [clj-http.fake :refer :all]
             [clojure.string :as string])
-  (:use [clj-http.fake]
-        [clojure.test]))
+  (:use [clojure.test]))
 
 (defn success-fn
   ([]
@@ -103,8 +103,7 @@
 (deftest test-delete-subject
   (let [subject-id "54430509-794e-497e-8ccd-ba01c713ef9f"]
     (with-fake-routes {(fake-url "subjects" subject-id) {:delete (delete-subject-response-fn subject-id)}}
-      (pc/delete-subject (create-fake-client) subject-id)
-      (is true "Subject deleted successfully."))))
+      (pc/delete-subject (create-fake-client) subject-id))))
 
 (deftest test-delete-subject-by-external-id
   (let [opts {:subject_id "ipctest" :subject_type "user"}]
@@ -182,8 +181,7 @@
 (deftest test-delete-resource
   (let [resource-id "20dbf604-a080-4706-acbc-8e65779cf638"]
     (with-fake-routes {(fake-url "resources" resource-id) {:delete (delete-resource-response-fn resource-id)}}
-      (pc/delete-resource (create-fake-client) resource-id)
-      (is true "Resource deleted successfully."))))
+      (pc/delete-resource (create-fake-client) resource-id))))
 
 (deftest test-delete-resource-by-name-and-type
   (let [opts {:resource_name "a" :resource_type_name "app"}]
@@ -251,8 +249,7 @@
 (deftest test-delete-resource-type
   (let [id "f41c182b-721a-4e6d-94a5-d9db7144ddc7"]
     (with-fake-routes {(fake-url "resource_types" id) (delete-resource-type-response-fn id)}
-      (pc/delete-resource-type (create-fake-client) id)
-      (is true "Resource type deleted successfully."))))
+      (pc/delete-resource-type (create-fake-client) id))))
 
 (deftest test-delete-resource-type-by-name
   (let [opts {:resource_type_name "app"}]
@@ -341,8 +338,7 @@
 (deftest test-revoke-perm
   (let [[rt rn st sn] ["app" "a" "user" "ipcdev"]]
     (with-fake-routes {(fake-url "permissions" "resources" rt rn "subjects" st sn) {:delete (success-fn)}}
-      (pc/revoke-permission (create-fake-client) rt rn st sn)
-      (is true "Permission revoked successfully."))))
+      (pc/revoke-permission (create-fake-client) rt rn st sn))))
 
 (deftest test-list-resource-permissions
   (let [[rt rn] ["app" "a"]]
