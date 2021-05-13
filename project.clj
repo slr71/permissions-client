@@ -11,4 +11,5 @@
                  [com.cemerick/url "0.1.1" :exclusions [com.cemerick/clojurescript.test]]
                  [medley "0.8.4"]
                  [org.clojure/clojure "1.8.0"]]
-  :profiles {:test {:dependencies [[clj-http-fake "1.0.3"]]}})
+  :profiles {:test {:dependencies [[clj-http-fake "1.0.3"]]}
+             :repl {:source-paths ["repl"]}})
