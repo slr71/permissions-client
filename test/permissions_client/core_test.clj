@@ -286,10 +286,26 @@
                         :name          "ipcdev"
                         :subject_type  "user"}}]})
 
+(def fake-abbreviated-perms
+  {:permissions
+   [{:id               "b587bbab-4c5f-4adc-baa7-f4ce04690c8e"
+     :permission_level "read"
+     :resource_name    "a"
+     :resource_type    "app"}
+    {:id               "c36ea831-fa4d-418b-8afb-27a7b8f7d9d6"
+     :permission_level "own"
+     :resource_name    "a"
+     :resource_type    "app"}]})
+
 (defn list-perms-response [_]
   {:status  200
    :headers {"Content-Type" "application/json"}
    :body    (json/encode fake-perms)})
+
+(defn list-abbreviated-perms-response [_]
+  {:status  200
+   :headers {"Content-Type" "application/json"}
+   :body    (json/encode fake-abbreviated-perms)})
 
 (deftest test-list-perms
   (with-fake-routes {(fake-url "permissions") {:get list-perms-response}}
@@ -362,6 +378,21 @@
       (is (= (pc/get-subject-permissions-for-resource-type (create-fake-client) st sn rt true) fake-perms)))
     (with-fake-routes {(fake-min-level-url "admin" "permissions" "subjects" st sn rt) {:get list-perms-response}}
       (is (= (pc/get-subject-permissions-for-resource-type (create-fake-client) st sn rt true "admin") fake-perms)))))
+
+(deftest test-get-abbreviated-subject-permissions-for-resource-type
+  (let [[st sn rt] ["user" "ipcdev" "app"]]
+    (with-fake-routes {(fake-lookup-url false "permissions" "abbreviated" "subjects" st sn rt)
+                       {:get list-abbreviated-perms-response}}
+      (is (= (pc/get-abbreviated-subject-permissions-for-resource-type (create-fake-client) st sn rt false)
+             fake-abbreviated-perms)))
+    (with-fake-routes {(fake-lookup-url true "permissions" "abbreviated" "subjects" st sn rt)
+                       {:get list-abbreviated-perms-response}}
+      (is (= (pc/get-abbreviated-subject-permissions-for-resource-type (create-fake-client) st sn rt true)
+             fake-abbreviated-perms)))
+    (with-fake-routes {(fake-min-level-url "admin" "permissions" "abbreviated" "subjects" st sn rt)
+                       {:get list-abbreviated-perms-response}}
+      (is (= (pc/get-abbreviated-subject-permissions-for-resource-type (create-fake-client) st sn rt true "admin")
+             fake-abbreviated-perms)))))
 
 (deftest test-get-subject-permissions-for-resource
   (let [[st sn rt rn] ["user" "ipcdev" "app" "a"]]
