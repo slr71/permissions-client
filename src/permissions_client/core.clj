@@ -2,7 +2,8 @@
   (:use [medley.core :only [map-keys remove-vals]])
   (:require [cemerick.url :as curl]
             [clj-http.client :as http]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [honey.sql.helpers :as h]))
 
 (defprotocol Client
   "A client library for the Permissions API."
@@ -120,7 +121,17 @@
      set to 'true' and the subject happens to be a user then the most privileged permissions available to the
      user or any group that the user belongs to (as determined by Grouper) will be listed. If the 'lookup?'
      flag is set to 'false' or the subject is a group then only permissions that were granted directly to the
-     subject will be listed."))
+     subject will be listed.")
+
+  (accessible-resource-query-dsl
+    [_ subject-ids resource-type]
+    [_ subject-ids resource-type min-level]
+    "Returns the HoneySQL DSL representing a query that can be used to find resource IDs that are accessible to one or
+     more subjects. The `subject-ids` argument should be an SQL array containing a list of subject IDs. The
+     `resource-type` argument is the name of the resource type as defined in the permissions service. The `min-level`
+     argument is the minimum permission level required for the query. For example, if the `min-level` parameter is
+     `write` then resources for which the user or users have at most `read` or `admin` (limited write) access will not
+     be included in the result set."))
 
 (defn- build-url [base-url & path-elements]
   (str (apply curl/url base-url path-elements)))
@@ -291,7 +302,25 @@
   (get-subject-permissions-for-resource [_ subject-type subject-id resource-type resource-name lookup? min-level]
     (:body (http/get (build-url base-url "permissions" "subjects" subject-type subject-id resource-type resource-name)
                      {:query-params {:lookup lookup? :min_level min-level}
-                      :as           :json}))))
+                      :as           :json})))
+
+  (accessible-resource-query-dsl [client subject-ids resource-type]
+    (accessible-resource-query-dsl client subject-ids resource-type "read"))
+
+  (accessible-resource-query-dsl [_ subject-ids resource-type min-level]
+    (if-not (instance? java.sql.Array subject-ids)
+      (throw (IllegalArgumentException. "subject-ids must be an instance of java.sql.Array")))
+    (-> (h/select-distinct [[:cast :pr.name :uuid] :id])
+        (h/from [:permissions.permissions :pp])
+        (h/join [:permissions.subjects :ps] [:= :pp.subject_id :ps.id])
+        (h/join [:permissions.resources :pr] [:= :pp.resource_id :pr.id])
+        (h/join [:permissions.resource_types :prt] [:= :pr.resource_type_id :prt.id])
+        (h/join [:permissions.permission_levels :pl] [:= :pp.permission_level_id :pl.id])
+        (h/where [:= :ps.subject_id [:any subject-ids]])
+        (h/where [:= :prt.name resource-type])
+        (h/where [:<= :pl.precedence (-> (h/select :precedence)
+                                         (h/from :permissions.permission_levels)
+                                         (h/where [:= :name min-level]))]))))
 
 (defn new-permissions-client [base-url]
   (PermissionsClient. base-url))

@@ -3,7 +3,8 @@
             [cemerick.url :as curl]
             [cheshire.core :as json]
             [clj-http.fake :refer :all]
-            [clojure.string :as string])
+            [clojure.string :as string]
+            [honey.sql :as hsql])
   (:use [clojure.test]))
 
 (defn success-fn
@@ -13,6 +14,33 @@
    (constantly {:status 200 :body body})))
 
 (def fake-base-url "http://perms.example.org/")
+
+(defn fake-sql-array
+  "Returns a fake implementation of java.sql.Array that can be used for testing. This is just a test shim, so only
+   some methods are fully implemented and any type conversion that would be done by a real implementation is ignored."
+  [items]
+  (reify java.sql.Array
+    (free [_])
+    (getArray [_]
+      (into-array String items))
+    (getArray [_ index count]
+      (into-array String (take count (drop index items))))
+    (getArray [_ index count _]
+      (into-array String (take count (drop index items))))
+    (getArray [_ _]
+      (into-array String items))
+    (getBaseType [_]
+      0)
+    (getBaseTypeName [_]
+      "text")
+    (getResultSet [_]
+      nil)
+    (getResultSet [_ _ _]
+      nil)
+    (getResultSet [_ _ _ _]
+      nil)
+    (getResultSet [_ _]
+      nil)))
 
 (defn fake-url [& components]
   (str (apply curl/url fake-base-url components)))
@@ -402,3 +430,30 @@
       (is (= (pc/get-subject-permissions-for-resource (create-fake-client) st sn rt rn true) fake-perms)))
     (with-fake-routes {(fake-min-level-url "own" "permissions" "subjects" st sn rt rn) {:get list-perms-response}}
       (is (= (pc/get-subject-permissions-for-resource (create-fake-client) st sn rt rn true "own") fake-perms)))))
+
+(defn accessible-resource-query-sql
+  "Returns SQL we expect to be generated from the DSL returned by `accessible-resource-query-dsl`"
+  []
+  (str "SELECT DISTINCT CAST(pr.name AS UUID) AS id "
+       "FROM permissions.permissions AS pp "
+       "INNER JOIN permissions.subjects AS ps ON pp.subject_id = ps.id "
+       "INNER JOIN permissions.resources AS pr ON pp.resource_id = pr.id "
+       "INNER JOIN permissions.resource_types AS prt ON pr.resource_type_id = prt.id "
+       "INNER JOIN permissions.permission_levels AS pl ON pp.permission_level_id = pl.id "
+       "WHERE (ps.subject_id = ANY(?)) "
+       "AND (prt.name = ?) "
+       "AND (pl.precedence <= (SELECT precedence FROM permissions.permission_levels WHERE name = ?))"))
+
+(deftest test-accessible-resource-query-dsl
+  (let [subject-ids    (fake-sql-array ["foo" "bar" "baz"])
+        expected-query (accessible-resource-query-sql)
+        client         (create-fake-client)]
+    (let [[query & params] (hsql/format (pc/accessible-resource-query-dsl client subject-ids "analysis"))]
+      (is (= expected-query query))
+      (is (= "analysis" (second params)))
+      (is (= "read" (last params))))
+    (let [[query & params] (hsql/format (pc/accessible-resource-query-dsl client subject-ids "app" "own"))]
+      (is (= expected-query query))
+      (is (= "app" (second params)))
+      (is (= "own" (last params))))
+    (is (thrown? IllegalArgumentException (pc/accessible-resource-query-dsl "foo" "app" "own")))))
