@@ -61,8 +61,12 @@ A client library for the CyVerse Discovery Environment permissions service.
 ;; listing may also include permissions that are assigned to groups that the user belongs to.
 (def permissions (pc/get-subject-permissions-for-resource client subject-type subject-id resource-type resource-name
                                                           true))
+
+;; Generate HoneySQL DSL that can be used to generate a query to list resource names that are accessible to a set of
+;; subject IDs.
+(def dsl (pc/accessible-resource-query-dsl client subject-ids resource-type permission-level))
 ```
 
 ## License
 
-http://www.cyverse.org/sites/default/files/iPLANT-LICENSE.txt
+https://cyverse.org/license
