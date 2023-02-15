@@ -2,10 +2,10 @@
   (:require [permissions-client.core :as pc])
   (:use [clojure.test]))
 
-(def ^:dynamic base-uri "http://permissions:60000/")
+(def ^:dynamic *base-uri* "http://permissions:60000/")
 
 (defn create-permissions-client []
-  (pc/new-permissions-client base-uri))
+  (pc/new-permissions-client *base-uri*))
 
 (defn run-integration-tests [f]
   (when (System/getenv "RUN_INTEGRATION_TESTS")
@@ -13,7 +13,7 @@
 
 (defn with-base-uri [f]
   (if-let [uri (System/getenv "PERMISSIONS_BASE_URI")]
-    (binding [base-uri uri]
+    (binding [*base-uri* uri]
       (f))
     (f)))
 

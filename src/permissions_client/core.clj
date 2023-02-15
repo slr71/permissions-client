@@ -2,7 +2,8 @@
   (:use [medley.core :only [map-keys remove-vals]])
   (:require [cemerick.url :as curl]
             [clj-http.client :as http]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [honey.sql.helpers :as h]))
 
 (defprotocol Client
   "A client library for the Permissions API."
@@ -30,7 +31,7 @@
     "Lists resources defined in the permissions service.")
 
   (add-resource [_ resource-name resource-type]
-     "Adds a resource to the permissions service. The resource-name field is the name or identifier that is used
+    "Adds a resource to the permissions service. The resource-name field is the name or identifier that is used
       by the client to refer to the resource. This field must be unique among resources of the same type. The
       resource-type field is the name of the resource type, which must have been registered in the permission
       database already.")
@@ -120,7 +121,17 @@
      set to 'true' and the subject happens to be a user then the most privileged permissions available to the
      user or any group that the user belongs to (as determined by Grouper) will be listed. If the 'lookup?'
      flag is set to 'false' or the subject is a group then only permissions that were granted directly to the
-     subject will be listed."))
+     subject will be listed.")
+
+  (accessible-resource-query-dsl
+    [_ subject-ids resource-type]
+    [_ subject-ids resource-type min-level]
+    "Returns the HoneySQL DSL representing a query that can be used to find resource IDs that are accessible to one or
+     more subjects. The `subject-ids` argument should be an SQL array containing a list of subject IDs. The
+     `resource-type` argument is the name of the resource type as defined in the permissions service. The `min-level`
+     argument is the minimum permission level required for the query. For example, if the `min-level` parameter is
+     `write` then resources for which the user or users have at most `read` or `admin` (limited write) access will not
+     be included in the result set."))
 
 (defn- build-url [base-url & path-elements]
   (str (apply curl/url base-url path-elements)))
@@ -128,7 +139,10 @@
 (defn- prepare-opts [opts ks]
   (remove-vals nil? (select-keys opts ks)))
 
-(deftype PermissionsClient [base-url]
+(defn- t [schema-name table-name]
+  (keyword (str (name schema-name) "." (name table-name))))
+
+(deftype PermissionsClient [base-url schema-name]
   Client
 
   (get-status [_]
@@ -291,7 +305,30 @@
   (get-subject-permissions-for-resource [_ subject-type subject-id resource-type resource-name lookup? min-level]
     (:body (http/get (build-url base-url "permissions" "subjects" subject-type subject-id resource-type resource-name)
                      {:query-params {:lookup lookup? :min_level min-level}
-                      :as           :json}))))
+                      :as           :json})))
 
-(defn new-permissions-client [base-url]
-  (PermissionsClient. base-url))
+  (accessible-resource-query-dsl [client subject-ids resource-type]
+    (accessible-resource-query-dsl client subject-ids resource-type "read"))
+
+  (accessible-resource-query-dsl [_ subject-ids resource-type min-level]
+    (if-not (instance? java.sql.Array subject-ids)
+      (throw (IllegalArgumentException. "subject-ids must be an instance of java.sql.Array")))
+    (-> (h/select-distinct [[:cast :pr.name :uuid] :id])
+        (h/from [(t schema-name :permissions) :pp])
+        (h/join [(t schema-name :subjects) :ps] [:= :pp.subject_id :ps.id])
+        (h/join [(t schema-name :resources) :pr] [:= :pp.resource_id :pr.id])
+        (h/join [(t schema-name :resource_types) :prt] [:= :pr.resource_type_id :prt.id])
+        (h/join [(t schema-name :permission_levels) :pl] [:= :pp.permission_level_id :pl.id])
+        (h/where [:= :ps.subject_id [:any subject-ids]])
+        (h/where [:= :prt.name resource-type])
+        (h/where [:<= :pl.precedence (-> (h/select :precedence)
+                                         (h/from (t schema-name :permission_levels))
+                                         (h/where [:= :name min-level]))]))))
+
+(defn new-permissions-client
+  ([]
+   (new-permissions-client "http://permissions"))
+  ([base-url]
+   (new-permissions-client base-url :permissions))
+  ([base-url schema-name]
+   (PermissionsClient. base-url schema-name)))
