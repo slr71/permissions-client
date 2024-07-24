@@ -13,3 +13,6 @@ pom.xml.asc
 build.xml
 test2junit
 /repl
+.clj-kondo
+.eastwood
+.lsp
