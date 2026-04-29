@@ -1,11 +1,12 @@
 (ns permissions-client.core-test
-  (:require [permissions-client.core :as pc]
-            [cemerick.url :as curl]
-            [cheshire.core :as json]
-            [clj-http.fake :refer :all]
-            [clojure.string :as string]
-            [honey.sql :as hsql])
-  (:use [clojure.test]))
+  (:require
+   [cemerick.url :as curl]
+   [cheshire.core :as json]
+   [clj-http.fake :refer [with-fake-routes]]
+   [clojure.string :as string]
+   [clojure.test :refer [deftest is]]
+   [honey.sql :as hsql]
+   [permissions-client.core :as pc]))
 
 (defn success-fn
   ([]
@@ -387,7 +388,13 @@
 (deftest test-list-resource-permissions
   (let [[rt rn] ["app" "a"]]
     (with-fake-routes {(fake-url "permissions" "resources" rt rn) {:get list-perms-response}}
-      (is (= (pc/list-resource-permissions (create-fake-client) rt rn) fake-perms)))))
+      (is (= (pc/list-resource-permissions (create-fake-client) rt rn) fake-perms)))
+    (with-fake-routes {(fake-query-url {:expand_groups true} "permissions" "resources" rt rn) {:get list-perms-response}}
+      (is (= (pc/list-resource-permissions (create-fake-client) rt rn true) fake-perms)))
+    (with-fake-routes {(fake-query-url {:expand_groups false} "permissions" "resources" rt rn) {:get list-perms-response}}
+      (is (= (pc/list-resource-permissions (create-fake-client) rt rn false) fake-perms)))
+    (with-fake-routes {(fake-query-url {:expand_groups false} "permissions" "resources" rt rn) {:get list-perms-response}}
+      (is (= (pc/list-resource-permissions (create-fake-client) rt rn "blargh") fake-perms)))))
 
 (deftest test-get-subject-permissions
   (let [[st sn] ["user" "ipcdev"]]
