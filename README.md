@@ -36,6 +36,7 @@ A client library for the CyVerse Discovery Environment permissions service.
 (def permission (pc/grant-permission client resource-type resource-name subject-type subject-id permission-level))
 (pc/revoke-permission client resource-type resource-name subject-type subject-id)
 (def permissions (pc/list-resource-permissions client resource-type resource-name))
+(def permissions-with-expanded-groups (pc/list-resource-permissions client resource-type resource-name true))
 
 ;; List permissions by subject.
 (def permissions (pc/get-subject-permissions client subject-type subject-id false))
