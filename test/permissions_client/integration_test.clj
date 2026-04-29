@@ -1,6 +1,7 @@
 (ns permissions-client.integration-test
-  (:require [permissions-client.core :as pc])
-  (:use [clojure.test]))
+  (:require
+   [clojure.test :refer [deftest is use-fixtures]]
+   [permissions-client.core :as pc]))
 
 (def ^:dynamic *base-uri* "http://permissions:60000/")
 
@@ -320,7 +321,7 @@
 
 (deftest test-revoke-perm
   (let [client (create-permissions-client)
-        perm   (pc/grant-permission client "app" "mr-radar" "user" "vespa" "read")]
+        _perm  (pc/grant-permission client "app" "mr-radar" "user" "vespa" "read")]
     (looked-up-permission-correct? (get-permission-map) "app" "mr-radar" "user" "vespa" "read")
     (pc/revoke-permission client "app" "mr-radar" "user" "vespa")
     (is (nil? (get-perm (get-permission-map) "app" "mr-radar" "user" "vespa")))))

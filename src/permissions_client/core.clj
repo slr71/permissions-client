@@ -1,9 +1,9 @@
 (ns permissions-client.core
-  (:use [medley.core :only [map-keys remove-vals]])
-  (:require [cemerick.url :as curl]
-            [clj-http.client :as http]
-            [clojure.string :as string]
-            [honey.sql.helpers :as h]))
+  (:require
+   [cemerick.url :as curl]
+   [clj-http.client :as http]
+   [honey.sql.helpers :as h]
+   [medley.core :refer [remove-vals]]))
 
 (defprotocol Client
   "A client library for the Permissions API."
@@ -311,7 +311,7 @@
     (accessible-resource-query-dsl client subject-ids resource-type "read"))
 
   (accessible-resource-query-dsl [_ subject-ids resource-type min-level]
-    (if-not (instance? java.sql.Array subject-ids)
+    (when-not (instance? java.sql.Array subject-ids)
       (throw (IllegalArgumentException. "subject-ids must be an instance of java.sql.Array")))
     (-> (h/select-distinct [[:cast :pr.name :uuid] :id])
         (h/from [(t schema-name :permissions) :pp])

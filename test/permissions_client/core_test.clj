@@ -1,11 +1,12 @@
 (ns permissions-client.core-test
-  (:require [permissions-client.core :as pc]
-            [cemerick.url :as curl]
-            [cheshire.core :as json]
-            [clj-http.fake :refer :all]
-            [clojure.string :as string]
-            [honey.sql :as hsql])
-  (:use [clojure.test]))
+  (:require
+   [cemerick.url :as curl]
+   [cheshire.core :as json]
+   [clj-http.fake :refer [with-fake-routes]]
+   [clojure.string :as string]
+   [clojure.test :refer [deftest is]]
+   [honey.sql :as hsql]
+   [permissions-client.core :as pc]))
 
 (defn success-fn
   ([]
