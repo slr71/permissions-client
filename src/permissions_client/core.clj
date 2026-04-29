@@ -83,8 +83,12 @@
   (revoke-permission [_ resource-type resource-name subject-type subject-id]
     "Revokes a permission that has previously been granted.")
 
-  (list-resource-permissions [_ resource-type resource-name]
-    "Lists all permissions associated with a resource.")
+  (list-resource-permissions
+    [_ resource-type resource-name]
+    [_ resource-types resource-name expand-groups]
+    "Lists all permissions associated with a resource. If expand-groups is provided and set to a truthy value, groups
+     will be expanded to individual users in the result, with permissions for the same subject deduplicated so that
+     only one permission with the highest permission level available for that subject will be included.")
 
   (get-subject-permissions
     [_ subject-type subject-id lookup?]
@@ -266,6 +270,11 @@
 
   (list-resource-permissions [_ resource-type resource-name]
     (:body (http/get (build-url base-url "permissions" "resources" resource-type resource-name) {:as :json})))
+
+  (list-resource-permissions [_ resource-type resource-name expand-groups]
+    (:body (http/get (build-url base-url "permissions" "resources" resource-type resource-name)
+                     {:query-params {:expand_groups (true? expand-groups)}
+                      :as           :json})))
 
   (get-subject-permissions [_ subject-type subject-id lookup?]
     (:body (http/get (build-url base-url "permissions" "subjects" subject-type subject-id)
